@@ -90,12 +90,130 @@ math_functions = {'lg': math.log, 'log': math.log, 'e': math.e}
 #             print(parsed_indexes)
 #     fill_other_blanks(function, parsed_math_functions, parsed_indexes)
 
+def function_calculation(x: float):
+    return math.log10(x+1) + math.e ** (x) + 0.5
 
-def half_dividing(function: str, variable: str = 'x', accuracy: float = 0.001):
-    # functionify(function, accuracy)
-    pass
+
+def first_derivative(x: float):
+    return math.e ** x + (1 / (math.log(10) * (x + 1)))
+
+
+def second_derivative(x: float):
+    return math.e ** x - (1 / (math.log(10) * (x ** 2 + 2 * x + 1)))
+
+
+def fi(x: float):
+    return 10 ** (-math.exp(x)-0.5)-1
+
+
+def dfi(x: float):
+    return - math.log(10)*math.exp(x)*10**(-math.exp(x)-0.5)
+
+
+def graph(x_start: float, x_finish: float, step: float = 1):
+
+    y_results = []
+
+    if step < 1:
+        x_range = [
+            x*step for x in range(int(x_start/step), int(x_finish/step)+1, 1)]
+    else:
+        x_range = range(x_start, x_finish+1, step)
+
+    for x in x_range:
+        y_results.append(function_calculation(x))
+    fig, ax = plt.subplots()
+    ax.plot(x_range, y_results)
+    plt.show()
+
+
+def half_dividing(f, left_limit: float, right_limit: float, accuracy: float = 0.001):
+    middle_limit = (left_limit+right_limit)/2
+
+    middle_value = f(middle_limit)
+
+    if abs(middle_limit-left_limit) <= accuracy:
+        return middle_limit
+
+    if middle_value < 0:
+        return half_dividing(f, middle_limit, right_limit, accuracy)
+
+    if middle_value > 0:
+        return half_dividing(f, left_limit, middle_limit, accuracy)
+
+
+def Newton_method(f, df, d2f, left_limit: float = None, right_limit: float = None, x0: float = None, accuracy: float = 0.001):
+    if left_limit != None and right_limit != None:
+        if f(left_limit) * d2f(left_limit) > 0:
+            x0 = left_limit
+        elif f(right_limit) * d2f(right_limit) > 0:
+            x0 = right_limit
+
+    x_next = x0 - (f(x0)/df(x0))
+
+    error = abs(x_next - x0)
+    if error <= accuracy:
+        return x_next
+    else:
+        return Newton_method(f, df, d2f, x0=x_next, accuracy=accuracy)
+
+
+def hords(f, xk1: float, xk: float, accuracy: float = 0.001):
+    x = xk1
+
+    while abs(f(x)) > accuracy:
+        # Обчислення значення функції на кінцях відрізка
+        fxk1 = f(xk1)
+        fxk = f(xk)
+
+        # Обчислення нового наближення за формулою хорд
+        x = xk - ((xk - xk1) / (fxk - fxk1)) * fxk
+
+        # Оновлення відрізка виміру
+        xk1, xk = xk, x
+
+    return x
+
+
+def simple_iteration(fi, dfi, left_limit: float = None, right_limit: float = None, x0: float = None, accuracy: float = 0.001, q: float = None):
+    if q == None:
+        x_range = [
+            x*accuracy for x in range(int(left_limit/accuracy), int(right_limit/accuracy), 1)]
+        abs_dfi_range = []
+        for x in x_range:
+            abs_dfi_range.append(abs(dfi(x)))
+
+        q = max(abs_dfi_range)
+
+    if x0 == None:
+        x0 = (left_limit+right_limit)/2
+
+    fix = fi(x0)
+    error = q/(1-q)*abs(fix-x0)
+
+    if error <= accuracy:
+        return fix
+    else:
+        return simple_iteration(fi, dfi, x0=fix, accuracy=accuracy, q=q)
 
 
 if __name__ == "__main__":
-    function = "lg(x + 1) - e^(x) + 0.5 = 0"
-    half_dividing(function)
+    # graph(-0.999, -0.75, 0.001)
+    left = -0.999
+    right = -0.75
+    accuracy = 0.001
+    print(f"Усі результати нижче надано з точністю до {accuracy}.")
+
+    print(
+        f'Корінь, знайдений методом половинного ділення:\n{half_dividing(function_calculation, left, right, accuracy)}')
+
+    print(
+        f'Корінь, знайдений методом Ньютона:\n{Newton_method(function_calculation, first_derivative, second_derivative, left, right, accuracy=accuracy)}')
+
+    print(
+        f'Корінь, знайдений методом хорд:\n{hords(function_calculation, right, left, accuracy)}'
+    )
+
+    print(
+        f'Корінь, знайдений методом простої ітерації:\n{simple_iteration(fi, dfi, left, right, accuracy=accuracy)}'
+    )
