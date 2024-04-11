@@ -127,22 +127,24 @@ def graph(x_start: float, x_finish: float, step: float = 1):
     plt.show()
 
 
-def half_dividing(f, left_limit: float, right_limit: float, accuracy: float = 0.001):
+def half_dividing(f, left_limit: float, right_limit: float, accuracy: float = 0.001, counter: int = 0):
     middle_limit = (left_limit+right_limit)/2
 
     middle_value = f(middle_limit)
 
     if abs(middle_limit-left_limit) <= accuracy:
-        return middle_limit
+        return middle_limit, counter
+
+    counter += 1
 
     if middle_value < 0:
-        return half_dividing(f, middle_limit, right_limit, accuracy)
+        return half_dividing(f, middle_limit, right_limit, accuracy, counter)
 
     if middle_value > 0:
-        return half_dividing(f, left_limit, middle_limit, accuracy)
+        return half_dividing(f, left_limit, middle_limit, accuracy, counter)
 
 
-def Newton_method(f, df, d2f, left_limit: float = None, right_limit: float = None, x0: float = None, accuracy: float = 0.001):
+def Newton_method(f, df, d2f, left_limit: float = None, right_limit: float = None, x0: float = None, accuracy: float = 0.001, counter: int = 0):
     if left_limit != None and right_limit != None:
         if f(left_limit) * d2f(left_limit) > 0:
             x0 = left_limit
@@ -152,16 +154,17 @@ def Newton_method(f, df, d2f, left_limit: float = None, right_limit: float = Non
     x_next = x0 - (f(x0)/df(x0))
 
     error = abs(x_next - x0)
+    counter += 1
     if error <= accuracy:
-        return x_next
+        return x_next, counter
     else:
-        return Newton_method(f, df, d2f, x0=x_next, accuracy=accuracy)
+        return Newton_method(f, df, d2f, x0=x_next, accuracy=accuracy, counter=counter)
 
 
 def hords(f, xk1: float, xk: float, accuracy: float = 0.001):
     x = xk1
-
-    while abs(f(x)) > accuracy:
+    counter = 0
+    while abs(xk1-xk) > accuracy:
         # Обчислення значення функції на кінцях відрізка
         fxk1 = f(xk1)
         fxk = f(xk)
@@ -171,11 +174,12 @@ def hords(f, xk1: float, xk: float, accuracy: float = 0.001):
 
         # Оновлення відрізка виміру
         xk1, xk = xk, x
+        counter += 1
 
-    return x
+    return x, counter
 
 
-def simple_iteration(fi, dfi, left_limit: float = None, right_limit: float = None, x0: float = None, accuracy: float = 0.001, q: float = None):
+def simple_iteration(fi, dfi, left_limit: float = None, right_limit: float = None, x0: float = None, accuracy: float = 0.001, q: float = None, counter: int = 0):
     if q == None:
         x_range = [
             x*accuracy for x in range(int(left_limit/accuracy), int(right_limit/accuracy), 1)]
@@ -190,30 +194,34 @@ def simple_iteration(fi, dfi, left_limit: float = None, right_limit: float = Non
 
     fix = fi(x0)
     error = q/(1-q)*abs(fix-x0)
-
+    counter += 1
     if error <= accuracy:
-        return fix
+        return fix, counter
     else:
-        return simple_iteration(fi, dfi, x0=fix, accuracy=accuracy, q=q)
+        return simple_iteration(fi, dfi, x0=fix, accuracy=accuracy, q=q, counter=counter)
 
 
 if __name__ == "__main__":
-    # graph(-0.999, -0.75, 0.001)
+    graph(-0.999, -0.75, 0.001)
     left = -0.999
     right = -0.75
     accuracy = 0.001
     print(f"Усі результати нижче надано з точністю до {accuracy}.")
 
+    halfDiv, iterations = half_dividing(function_calculation, left, right, accuracy) 
     print(
-        f'Корінь, знайдений методом половинного ділення:\n{half_dividing(function_calculation, left, right, accuracy)}')
+        f'Корінь, знайдений методом половинного ділення за {iterations} кроків:\n{halfDiv}')
+    
+    Newton, iterations = Newton_method(function_calculation, first_derivative, second_derivative, left, right, accuracy=accuracy)
+    print(
+        f'Корінь, знайдений методом Ньютона за {iterations} кроків:\n{Newton}')
 
+    hords, iterations = hords(function_calculation, right, left, accuracy)
     print(
-        f'Корінь, знайдений методом Ньютона:\n{Newton_method(function_calculation, first_derivative, second_derivative, left, right, accuracy=accuracy)}')
-
-    print(
-        f'Корінь, знайдений методом хорд:\n{hords(function_calculation, right, left, accuracy)}'
+        f'Корінь, знайдений методом хорд за {iterations} кроків:\n{hords}'
     )
 
+    simplIter, iterations = simple_iteration(fi, dfi, left, right, accuracy=accuracy)
     print(
-        f'Корінь, знайдений методом простої ітерації:\n{simple_iteration(fi, dfi, left, right, accuracy=accuracy)}'
+        f'Корінь, знайдений методом простої ітерації за {iterations} кроків:\n{simplIter}\n'
     )
